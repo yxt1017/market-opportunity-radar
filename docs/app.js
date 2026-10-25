@@ -12,6 +12,7 @@ $('ranktitle').textContent=tab==='all'?'综合候选榜':tab+'机会候选榜';$
 const choices=items.map(x=>JSON.stringify([x.keyword,x.opportunity_type]));let old=$('keyword').value;$('keyword').innerHTML=items.map(x=>`<option value="${escapeHTML(JSON.stringify([x.keyword,x.opportunity_type]))}">${escapeHTML(x.keyword)} · ${escapeHTML(x.opportunity_type)}</option>`).join('');if(choices.includes(old))$('keyword').value=old;renderSeries();
 let quality=DATA.rows.slice().sort((a,b)=>b.observed_date.localeCompare(a.observed_date));$('qualitytable').innerHTML=quality.length?table(['日期','平台','关键词','类别','指标','原始值','来源类型声明','来源名称','统计范围'],quality.map(x=>[x.observed_date,escapeHTML(x.platform),escapeHTML(x.keyword),escapeHTML(x.opportunity_type),escapeHTML(DATA.metrics[x.metric_type]?.[0]||x.metric_type),escapeHTML(x.metric_value),escapeHTML(DATA.sources[x.source_type]||x.source_type),escapeHTML(x.source_name),escapeHTML(x.source_scope)])):'<p>暂无记录</p>';
 enhancePublicView();
+showPlatforms();
 }
 function renderSeries(){const [kw,kind]=JSON.parse($('keyword').value||'[]');const points=DATA.rows.filter(x=>x.keyword===kw&&x.opportunity_type===kind);let opts=[],map=Object.create(null);for(const p of points){let k=JSON.stringify([p.platform,p.metric_type,p.source_type,p.source_name,p.source_scope]);if(!map[k]){map[k]=[];opts.push(k)}map[k].push(p)}
 $('series').innerHTML=opts.map(k=>{let p=map[k][0];return `<option value="${escapeHTML(k)}">${escapeHTML(p.platform)} · ${escapeHTML(DATA.metrics[p.metric_type]?.[0]||p.metric_type)} · ${escapeHTML(p.source_name)} · ${escapeHTML(p.source_scope)}</option>`}).join('');$('series')._points=map;draw();}
@@ -32,7 +33,8 @@ async function load(force=false){
   try{
     if(mode==='public'&&(!publicFeed||force)){const feed=await loadPublicFeed();if(sequence!==loadSequence)return;publicFeed=feed;}
     if(sequence!==loadSequence)return;
-    const rows=mode==='public'?publicFeed.rows.filter(r=>r.metric_type===publicMetric):mode==='demo'?Radar.demoRows():readSaved();
+    const available=mode==='public'?publicFeed.rows.filter(r=>r.metric_type===publicMetric):mode==='demo'?Radar.demoRows():readSaved();
+    const rows=RadarPlatforms.filter(available,selectedPlatform);
     const analysis=mode==='public'?PublicRadar.analyze(rows,publicMetric,Radar.today(),publicFeed.sources):Radar.analyze(rows);
     DATA={rows,analysis,metrics:Radar.METRICS,sources:{...Radar.SOURCES,...(mode==='public'?{public_api:'官方公开接口自动采集'}:{})},mode};render();
   }catch(e){
@@ -48,19 +50,21 @@ async function req(endpoint,payload){
   try{localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));}catch{throw Error('浏览器存储不可用或空间不足，未保存；请先导出备份。');}
   return {count:incoming.length};
 }
-async function uploadCSV(){let file=$('csvfile').files[0];if(!file){$('uploadresult').textContent='请选择文件';return}if(file.size>2*1024*1024){$('uploadresult').textContent='文件不能超过2MB';return}try{let txt=await file.text(),res=await req('/api/import',{csv:txt});$('uploadresult').textContent='✅ 成功导入或更新 '+res.count+' 行；已切换真实区。';mode='real';$('mode').value=mode;await load()}catch(e){$('uploadresult').textContent='❌ '+e.message}}
-$('entryform').addEventListener('submit',async e=>{e.preventDefault();const row=Object.fromEntries(new FormData(e.target));try{await req('/api/add',{row});$('addresult').textContent='✅ 保存成功（真实区）';mode='real';$('mode').value=mode;await load()}catch(err){$('addresult').textContent='❌ '+err.message}});
+async function uploadCSV(){let file=$('csvfile').files[0];if(!file){$('uploadresult').textContent='请选择文件';return}if(file.size>2*1024*1024){$('uploadresult').textContent='文件不能超过2MB';return}try{let txt=await file.text(),res=await req('/api/import',{csv:txt});$('uploadresult').textContent='✅ 成功导入或更新 '+res.count+' 行；已切换真实区。';mode='real';selectedPlatform='all';$('mode').value=mode;await load()}catch(e){$('uploadresult').textContent='❌ '+e.message}}
+$('entryform').addEventListener('submit',async e=>{e.preventDefault();const row=Object.fromEntries(new FormData(e.target));try{await req('/api/add',{row});$('addresult').textContent='✅ 保存成功（真实区）';mode='real';selectedPlatform=RadarPlatforms.normalize(row.platform);$('mode').value=mode;await load()}catch(err){$('addresult').textContent='❌ '+err.message}});
 function download(url,name){
   const text=url.startsWith('/api/template')?'\uFEFF'+Radar.FIELDS.join(',')+'\r\n':Radar.exportCSV(DATA.rows);
   if(!url.startsWith('/api/template'))name=mode==='demo'?'模拟数据_非真实平台数据.csv':mode==='public'?'公开关注记录_非平台搜索量.csv':'我的观察记录.csv';
+  if(!url.startsWith('/api/template')&&selectedPlatform!=='all')name=selectedPlatform+'_'+name;
   const objectUrl=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));
   const a=document.createElement('a');a.href=objectUrl;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
 }
-$('mode').onchange=e=>{mode=e.target.value;load()};$('keyword').onchange=renderSeries;$('series').onchange=draw;
+$('mode').onchange=e=>changeDataMode(e.target.value);$('keyword').onchange=renderSeries;$('series').onchange=draw;
 $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});
 $('entryform').querySelector('[name="observed_date"]').value=Radar.today();
 // 来源选项在请求返回后设置，保证与后端定义一致
+showPlatforms();
 load().then(()=>{for(let [code,v] of Object.entries(DATA.metrics))$('metricselect').insertAdjacentHTML('beforeend',`<option value="${escapeHTML(code)}">${escapeHTML(v[0])}</option>`);for(let [code,v] of Object.entries(DATA.sources))if(code!=='demo')$('sourceselect').insertAdjacentHTML('beforeend',`<option value="${escapeHTML(code)}">${escapeHTML(v)}</option>`)});
 
-$('public-metric').onchange=e=>{publicMetric=e.target.value;load()};
+$('public-metric').onchange=e=>{publicMetric=e.target.value;if(selectedPlatform!=='all')selectedPlatform=publicMetric==='github_stars'?'GitHub':'维基百科';load()};
 $('refresh-public').onclick=()=>load(true);

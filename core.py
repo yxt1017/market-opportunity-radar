@@ -10,7 +10,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from statistics import mean, median
 
-PLATFORMS = ("拼多多", "小红书", "闲鱼", "其他")
+PLATFORMS = ('拼多多', '小红书', '闲鱼', '淘宝/天猫', '京东', '抖音', '1688', '知乎', '哔哩哔哩', '其他')
+PLATFORM_ALIASES = {'咸鱼': '闲鱼', '淘宝': '淘宝/天猫', '天猫': '淘宝/天猫', '淘宝天猫': '淘宝/天猫', 'B站': '哔哩哔哩', 'b站': '哔哩哔哩', 'bilibili': '哔哩哔哩'}
 OPPORTUNITY_TYPES = ("商品", "软件")
 METRICS = {
     "search_index": ("平台搜索指数", "需求线索（相对指数）", "越高越强"),
@@ -70,6 +71,7 @@ def validate_row(row: dict, *, is_demo: bool = False) -> dict:
         raise ValueError("observed_date 必须是 YYYY-MM-DD") from exc
     if parsed_date > date.today() + timedelta(days=1):
         raise ValueError("观察日期不能在未来超过一天")
+    out["platform"] = PLATFORM_ALIASES.get(out["platform"], out["platform"])
     if out["platform"] not in PLATFORMS:
         raise ValueError(f"platform 必须是：{', '.join(PLATFORMS)}")
     if not out["keyword"] or len(out["keyword"]) > 80:

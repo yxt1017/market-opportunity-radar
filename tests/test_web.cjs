@@ -37,3 +37,4 @@ const before=JSON.stringify(saved);
 assert.throws(()=>R.mergeRows(saved,[base,{...base,keyword:'invalid',source_type:'demo'}]),/模拟数据/);
 assert.equal(JSON.stringify(saved),before);
 console.log('PASS: 8 Python/JavaScript analysis parity cases; CSV, validation, source separation and atomic upsert checks.');
+require('./test_platforms.cjs');

@@ -24,9 +24,10 @@
   const SERIES_FIELDS = ['platform','keyword','opportunity_type','metric_type','source_type','source_name','source_scope'];
   function validate(row, isDemo=false) {
     const r=Object.fromEntries(FIELDS.map(f=>[f,String(row[f]??'').trim()]));
+    r.platform = ({"咸鱼": "闲鱼", "淘宝": "淘宝/天猫", "天猫": "淘宝/天猫", "淘宝天猫": "淘宝/天猫", "B站": "哔哩哔哩", "b站": "哔哩哔哩", "bilibili": "哔哩哔哩"})[r.platform] || r.platform;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(r.observed_date) || !Number.isFinite(dateNumber(r.observed_date)) || dateString(dateNumber(r.observed_date))!==r.observed_date) throw Error('观察日期必须是有效的 YYYY-MM-DD');
     if(dateNumber(r.observed_date)>dateNumber(today())+1) throw Error('观察日期不能在未来超过一天');
-    if(!['拼多多','小红书','闲鱼','其他','维基百科','GitHub'].includes(r.platform)) throw Error('平台必须是拼多多、小红书、闲鱼或其他');
+    if(!["拼多多", "小红书", "闲鱼", "淘宝/天猫", "京东", "抖音", "1688", "知乎", "哔哩哔哩", "其他", "维基百科", "GitHub"].includes(r.platform)) throw Error('平台名称不支持，请使用页面平台列表中的名称');
     if(!r.keyword || [...r.keyword].length>80) throw Error('关键词必须是1至80个字符');
     if(!['商品','软件'].includes(r.opportunity_type)) throw Error('类别必须是商品或软件');
     if(!Object.hasOwn(METRICS,r.metric_type)) throw Error('未知的指标类型');
