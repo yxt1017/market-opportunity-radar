@@ -1,38 +1,41 @@
-# 市场机会雷达 V1
+# 市场机会雷达 V1.1
 
-商品机会与软件机会的原始观察分析工具。提供 GitHub Pages 网页版与原有 Python 本地版。
+商品与软件机会的观察工具，现已接入每日更新的公开真实数据，并保留个人导入与模拟演示。
 
-**尚未连接拼多多、小红书或闲鱼的实时数据。所有演示词、数值和趋势均为模拟样本。初次打开真实数据区为空。**
+**网页：https://yxt1017.github.io/market-opportunity-radar/**
 
-- 网页预览：https://yxt1017.github.io/market-opportunity-radar/
-- 网页源码：`docs/`，无第三方依赖、无需构建。
-- 本地运行：Python 3.10+ 执行 `python server.py`，或 Windows 双击 `启动雷达.bat`。
-- 可选 Streamlit 界面：`pip install -r requirements.txt` 后执行 `streamlit run app.py`。
+## 数据与使用
 
-## 网页版使用
+- 默认「公开真实数据」：中文维基百科16个主题的每日阅读量，及6个GitHub软件项目的累计Star数。
+- 「商品机会」「软件机会」按类别筛选；百科与GitHub指标分别排名。
+- 每日北京时间11:23自动采集并重新发布。GitHub调度可能延迟；页面显示最近采集时间、实际观测日与失败来源。
+- 初次GitHub快照不足以计算历史增幅，会显示积累中。百科可回填官方已公布的近期日记录。
+- 「我的导入数据」只保存在当前浏览器，可手工添加、CSV导入导出；不上传GitHub。
+- 「模拟演示数据」完全隔离，数值均为虚构。
 
-1. 打开预览，右上角切换「模拟演示数据」体验功能。
-2. 「统一分析」「商品机会」「软件机会」分别查看综合候选与分类榜。
-3. 「导入数据」可下载仅含表头的 CSV 模板，填入实际观察，或手工添加记录。
-4. 「数据来源」可检查来源声明并导出备份。导出的模拟文件仍标记 demo，禁止导入真实区。
+这些公开指标是阅读与开发者关注信号，**不是闲鱼、小红书、拼多多的搜索量或销量**。观察对象来自固定清单，不是全网新热词发现。具体算法、来源定义、权限和停用方法见 [每日数据说明](DAILY_DATA.md)。
 
-网页在浏览器中完成分析和 CSV 处理，不将观察数据发送给 GitHub 或其他服务。记录保存在当前浏览器 localStorage；换设备、换浏览器、换网址不共享，清除站点数据会丢失记录。请定期导出。网页存储与 Python SQLite 数据库不自动同步，可通过 CSV 互相导入。
+## 自动发布与维护
 
-排名是复核线索的顺序，不是市场规模、利润或成交预测。官方来源标签仅是导入者声明，系统没有验证其真实性。相同系列按平台、关键词、类别、指标、来源类型、来源名称与范围划分；前后 7 日各至少 2 个观测且前期均值大于零才计算变化。供给数量不视作需求增长。
+工作流：[Daily public data and Pages](https://github.com/yxt1017/market-opportunity-radar/actions/workflows/daily-public-data.yml)。支持定时、手动和代码更新触发。Pages发布源使用GitHub Actions。
 
-## GitHub Pages 部署
+配置观察对象：`config/public_watchlist.json`。采集脚本：`scripts/update_public_data.py`。网页：`docs/`。公开历史数据保留90天，来源错误不会被补零或模拟值覆盖。
 
-在仓库 Settings → Pages 中选择 Deploy from a branch，分支 `main`，目录 `/docs`，保存。只发布 `docs/` 静态文件，Python 服务端仍供本机运行。
+## Python本地版
 
-## 检查
+Python 3.10+运行 `python server.py`，或Windows双击 `启动雷达.bat`。原Python界面用于本地手工观察；新每日公开数据功能在网页版中提供。
+
+## 验证
 
 ```text
 python -m unittest discover -s tests
 node tests/test_web.cjs
+node tests/test_public.cjs
 ```
 
 ---
 
+以下为原V1本地版说明；其中“尚未接入”只指原本地界面及电商平台，当前网页版已接入上述公开来源。
 ## 原项目使用说明
 
 # 📡 市场机会雷达 V1

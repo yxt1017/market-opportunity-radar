@@ -1,0 +1,89 @@
+name: Daily public data and Pages
+
+on:
+  schedule:
+    # 03:23 UTC = 11:23 Asia/Shanghai; GitHub may delay scheduled runs.
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'config/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'core.py'
+      - '.github/workflows/daily-public-data.yml'
+
+concurrency:
+  group: radar-daily-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    outputs:
+      health: ${{ steps.health.outputs.status }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate analysis and collectors
+        run: |
+          python -m unittest discover -s tests
+          node tests/test_web.cjs
+          node tests/test_public.cjs
+          node --check docs/app.js
+          node --check docs/public-ui.js
+      - name: Collect official public statistics
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/update_public_data.py
+      - name: Preserve dated public history
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/data/public.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update dated public attention observations'
+            git push origin HEAD:main
+          fi
+      - name: Record collection health
+        id: health
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data = json.loads(Path('docs/data/public.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('status=' + data['status'] + '\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write(f"Updated: {data['generated_at']}\n\nSources: {data['successful_sources']}/{data['total_sources']}\n\nStatus: {data['status']}\n")
+          PY
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+
+  publish:
+    needs: refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish website and dated statistics
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Flag any failed sources after publishing visible status
+        if: needs.refresh.outputs.health != 'ok'
+        run: |
+          echo 'Some sources failed. The website retains dated history and shows source errors.'
+          exit 1

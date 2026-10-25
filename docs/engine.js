@@ -3,6 +3,8 @@
   'use strict';
   const FIELDS = ['observed_date','platform','keyword','opportunity_type','metric_type','metric_value','source_type','source_name','source_scope','source_url','notes'];
   const METRICS = {
+    wiki_pageviews:['百科每日阅读次数','公开关注信号；不是搜索量或购买需求','同条目同范围比较'],
+    github_stars:['GitHub累计Star数','开源项目关注；不是用户数或付费需求','需积累历史快照'],
     search_index:['平台搜索指数','需求线索（相对指数）','越高越强'],
     platform_searches:['平台披露的搜索次数','需求线索（仅限明确授权数据）','越高越强'],
     shop_search_visitors:['本店搜索来源访问量','局部需求线索（仅本店）','越高越强'],
@@ -10,7 +12,7 @@
     content_count:['观察到的相关内容数','内容供给观察（不是需求）','越高不代表需求越强'],
     suggestion_rank:['搜索建议词位置','曝光位置观察（不是搜索量）','数字越小位置越靠前']
   };
-  const SOURCES = {official_export:'用户声明：官方后台导出（未经系统验证）',authorized_api:'用户声明：授权接口（未经系统验证）',manual_observation:'人工观察记录',third_party_estimate:'第三方提供/估算（待核验）',demo:'模拟演示，非真实平台数据'};
+  const SOURCES = {public_api:'公开API记录（手动导入时仅为来源声明）',official_export:'用户声明：官方后台导出（未经系统验证）',authorized_api:'用户声明：授权接口（未经系统验证）',manual_observation:'人工观察记录',third_party_estimate:'第三方提供/估算（待核验）',demo:'模拟演示，非真实平台数据'};
   const DEMAND = new Set(['search_index','platform_searches','shop_search_visitors']);
   const DAY = 86400000;
   const dateNumber = s => Date.parse(s+'T00:00:00Z')/DAY;
@@ -24,7 +26,7 @@
     const r=Object.fromEntries(FIELDS.map(f=>[f,String(row[f]??'').trim()]));
     if (!/^\d{4}-\d{2}-\d{2}$/.test(r.observed_date) || !Number.isFinite(dateNumber(r.observed_date)) || dateString(dateNumber(r.observed_date))!==r.observed_date) throw Error('观察日期必须是有效的 YYYY-MM-DD');
     if(dateNumber(r.observed_date)>dateNumber(today())+1) throw Error('观察日期不能在未来超过一天');
-    if(!['拼多多','小红书','闲鱼','其他'].includes(r.platform)) throw Error('平台必须是拼多多、小红书、闲鱼或其他');
+    if(!['拼多多','小红书','闲鱼','其他','维基百科','GitHub'].includes(r.platform)) throw Error('平台必须是拼多多、小红书、闲鱼或其他');
     if(!r.keyword || [...r.keyword].length>80) throw Error('关键词必须是1至80个字符');
     if(!['商品','软件'].includes(r.opportunity_type)) throw Error('类别必须是商品或软件');
     if(!Object.hasOwn(METRICS,r.metric_type)) throw Error('未知的指标类型');

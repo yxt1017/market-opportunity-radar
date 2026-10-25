@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "description": "人工选择的观察清单，不是全网热词发现，也不代表购买或付费需求。",
+  "wikipedia": [
+    {"keyword": "智能手机", "type": "商品", "article": "智能手机"},
+    {"keyword": "平板电脑", "type": "商品", "article": "平板电脑"},
+    {"keyword": "智能手表", "type": "商品", "article": "智能手表"},
+    {"keyword": "空气净化器", "type": "商品", "article": "空气净化器"},
+    {"keyword": "3D打印", "type": "商品", "article": "3D打印"},
+    {"keyword": "移动电源", "type": "商品", "article": "移动电源"},
+    {"keyword": "咖啡机", "type": "商品", "article": "咖啡机"},
+    {"keyword": "电子阅读器", "type": "商品", "article": "电子阅读器"},
+    {"keyword": "人工智能", "type": "软件", "article": "人工智能"},
+    {"keyword": "机器翻译", "type": "软件", "article": "机器翻译"},
+    {"keyword": "光学字符识别", "type": "软件", "article": "光学字符识别"},
+    {"keyword": "语音识别", "type": "软件", "article": "语音识别"},
+    {"keyword": "密码管理器", "type": "软件", "article": "密码管理器"},
+    {"keyword": "视频编辑软件", "type": "软件", "article": "视频编辑软件"},
+    {"keyword": "项目管理软件", "type": "软件", "article": "项目管理软件"},
+    {"keyword": "笔记软件", "type": "软件", "article": "笔记软件"}
+  ],
+  "github": [
+    {"keyword": "Dify · AI应用开发", "type": "软件", "repo": "langgenius/dify"},
+    {"keyword": "n8n · 工作流自动化", "type": "软件", "repo": "n8n-io/n8n"},
+    {"keyword": "RAGFlow · 知识库问答", "type": "软件", "repo": "infiniflow/ragflow"},
+    {"keyword": "AFFiNE · 知识管理", "type": "软件", "repo": "toeverything/AFFiNE"},
+    {"keyword": "Stirling PDF · 文档处理", "type": "软件", "repo": "Stirling-Tools/Stirling-PDF"},
+    {"keyword": "Uptime Kuma · 网站监控", "type": "软件", "repo": "louislam/uptime-kuma"}
+  ]
+}
